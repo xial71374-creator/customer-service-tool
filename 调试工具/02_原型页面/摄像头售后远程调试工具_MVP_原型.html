@@ -1517,6 +1517,69 @@
       background: rgba(255, 195, 74, .22);
     }
 
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: .45;
+      box-shadow: none;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 8, 14, .66);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20000;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      width: 460px;
+      border-radius: 8px;
+      background: #171c28;
+      border: 1px solid var(--line);
+      box-shadow: 0 28px 80px rgba(0, 0, 0, .46);
+    }
+
+    .modal-head {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line-soft);
+      font-weight: 750;
+    }
+
+    .modal-body {
+      padding: 20px;
+      color: #c7d0e3;
+      line-height: 1.7;
+    }
+
+    .risk-box {
+      margin-top: 14px;
+      border: 1px solid rgba(255, 100, 116, .38);
+      background: rgba(255, 100, 116, .08);
+      border-radius: 8px;
+      padding: 12px;
+      color: #ffd7db;
+      font-size: 13px;
+    }
+
+    .check-row {
+      margin-top: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      color: #dce5f8;
+      font-size: 13px;
+    }
+
+    .check-row input {
+      margin-top: 3px;
+    }
+
     .video-panel .panel-body {
       padding: 0;
       height: calc(100% - 40px);
@@ -2518,7 +2581,7 @@
                   <div class="firmware-value">
                     <strong id="infoFirmware">sys_1.0.8</strong>
                     <span class="firmware-tag" id="firmwareLatestTag" hidden>最新</span>
-                    <button class="firmware-upgrade-btn" id="firmwareUpgradeBtn" type="button">固件升级</button>
+                    <button class="firmware-upgrade-btn" id="firmwareUpgradeBtn" type="button" hidden>固件升级</button>
                   </div>
                 </div>
                 <div class="kv"><label>在线状态</label><strong id="infoOnline">在线</strong></div>
@@ -2832,6 +2895,24 @@
     <div class="req-popover-body" id="reqPopoverBody"></div>
   </div>
 
+  <div class="modal-backdrop" id="firmwareUpgradeModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="固件升级确认">
+      <div class="modal-head" id="firmwareUpgradeModalTitle">高敏操作确认</div>
+      <div class="modal-body" id="firmwareUpgradeModalBody">
+        该操作可能影响用户设备或数据。确认后系统将通过 MQTT 下发指令，并记录客服操作日志。
+        <div class="risk-box" id="firmwareUpgradeRiskText">请确认当前操作确实用于用户售后问题排查。</div>
+        <label class="check-row">
+          <input type="checkbox" id="firmwareUpgradeRiskCheck">
+          <span>我已确认该高敏操作的影响，并确认用户问题排查需要执行该操作。</span>
+        </label>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" id="firmwareUpgradeCancelBtn" type="button">取消</button>
+        <button class="btn primary" id="firmwareUpgradeConfirmBtn" type="button" disabled>确认执行</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const logList = document.getElementById('logList');
     const vuidInput = document.getElementById('vuidInput');
@@ -2926,6 +3007,14 @@
     const recordMetricCommand = document.getElementById('recordMetricCommand');
     const recordMetricFailed = document.getElementById('recordMetricFailed');
     const recordMetricRisk = document.getElementById('recordMetricRisk');
+    const firmwareUpgradeBtn = document.getElementById('firmwareUpgradeBtn');
+    const firmwareUpgradeModal = document.getElementById('firmwareUpgradeModal');
+    const firmwareUpgradeModalTitle = document.getElementById('firmwareUpgradeModalTitle');
+    const firmwareUpgradeModalBody = document.getElementById('firmwareUpgradeModalBody');
+    const firmwareUpgradeRiskText = document.getElementById('firmwareUpgradeRiskText');
+    const firmwareUpgradeRiskCheck = document.getElementById('firmwareUpgradeRiskCheck');
+    const firmwareUpgradeCancelBtn = document.getElementById('firmwareUpgradeCancelBtn');
+    const firmwareUpgradeConfirmBtn = document.getElementById('firmwareUpgradeConfirmBtn');
     let controlAvailable = false;
     let streaming = false;
     let imageStreamTimer = null;
@@ -2935,6 +3024,7 @@
     let editingAccountKey = '';
     let activeDebugRecordId = '';
     let activeServerLogTag = 'all';
+    let pendingFirmwareUpgrade = null;
     let quickControlState = {
       remoteSleep: false,
       workMode: '低功耗模式',
@@ -4599,6 +4689,38 @@
       upgradeBtn.textContent = state === 'upgrading' ? '升级中' : '固件升级';
     }
 
+    function closeFirmwareUpgradeModal() {
+      pendingFirmwareUpgrade = null;
+      firmwareUpgradeRiskCheck.checked = false;
+      firmwareUpgradeConfirmBtn.disabled = true;
+      firmwareUpgradeModal.classList.remove('show');
+    }
+
+    function openFirmwareUpgradeModal(currentVersion, latestVersion) {
+      pendingFirmwareUpgrade = { currentVersion, latestVersion };
+      firmwareUpgradeModalTitle.textContent = '高敏操作确认';
+      firmwareUpgradeModalBody.childNodes[0].nodeValue = `确认执行「固件升级」？该操作将通过 MQTT 下发，并记录客服操作日志。`;
+      firmwareUpgradeRiskText.textContent = '固件升级会让设备进入升级流程，期间可能短暂离线或无法预览。请确认设备在线、电量/供电稳定，并确认用户同意升级到服务器最新固件版本。';
+      firmwareUpgradeRiskCheck.checked = false;
+      firmwareUpgradeConfirmBtn.disabled = true;
+      firmwareUpgradeModal.classList.add('show');
+    }
+
+    function confirmFirmwareUpgrade() {
+      if (!pendingFirmwareUpgrade) return;
+      const { currentVersion, latestVersion } = pendingFirmwareUpgrade;
+      closeFirmwareUpgradeModal();
+      setFirmwareState(currentVersion, latestVersion, 'upgrading');
+      addLog('指令', `已确认并下发高敏操作「固件升级」 current=${currentVersion} target=${latestVersion} requestId=req_${Date.now()}`);
+      addLog('系统', `设备已进入固件升级流程，目标版本 ${latestVersion}，升级期间可能短暂离线`);
+      setTimeout(() => {
+        setFirmwareState(latestVersion, latestVersion);
+        const firmwareModel = findModel('sys_ver') || findModel('firmware_version');
+        if (firmwareModel) firmwareModel.v = latestVersion;
+        addLog('回调', `设备固件升级成功，当前版本已更新为 ${latestVersion}`);
+      }, 1100);
+    }
+
     function applyDeviceProfile(profile, vuid = vuidInput.value.trim(), region = regionForQuery()) {
       activeProfile = profile;
       activeRegion = region;
@@ -5349,6 +5471,7 @@
       activeProfile = deviceProfiles.baby;
       activeRegion = regionForQuery();
       thingModels = [];
+      closeFirmwareUpgradeModal();
       stopPreview();
       setControlState('unknown');
       modelSearch.value = '';
@@ -5484,6 +5607,11 @@
       document.getElementById('videoVuid').textContent = vuid;
       addLog('系统', `设备 ${vuid} 基础状态查询成功，已识别为 ${nextProfile.productType}，${regionLogSuffix(region)}`);
       addLog('系统', `已查询设备当前固件版本 ${firmware.current}，服务器最新版本 ${firmware.latest}，${regionLogSuffix(region)}`);
+      if (firmware.current === firmware.latest) {
+        addLog('系统', `当前固件已是最新，隐藏固件升级入口，${regionLogSuffix(region)}`);
+      } else {
+        addLog('系统', `当前固件可升级，展示固件升级入口，${regionLogSuffix(region)}`);
+      }
       addLog('系统', `正在查询 ${nextProfile.controlChannel.toUpperCase()} 控制链路状态：${vuid}，route=${region.controlRoute}`);
       setControlState('checking');
       setTimeout(() => {
@@ -5492,22 +5620,23 @@
       }, 420);
     });
 
-    document.getElementById('firmwareUpgradeBtn').addEventListener('click', () => {
+    firmwareUpgradeBtn.addEventListener('click', () => {
       if (!requirePermission('canCallService', '固件升级', '固件版本')) return;
       if (!controlAvailable) {
         addLog('错误', `固件升级失败：请先查询设备并确认 ${activeProfile.controlChannel.toUpperCase()} 控制链路可用`, true);
         return;
       }
       const currentVersion = document.getElementById('infoFirmware').textContent;
-      setFirmwareState(currentVersion, firmwareLatestVersion, 'upgrading');
-      addLog('指令', `已下发「固件升级」 current=${currentVersion} target=${firmwareLatestVersion} ${regionLogSuffix()} requestId=req_${Date.now()}`);
-      setTimeout(() => {
-        setFirmwareState(firmwareLatestVersion, firmwareLatestVersion);
-        const firmwareModel = findModel('sys_ver') || findModel('firmware_version');
-        if (firmwareModel) firmwareModel.v = firmwareLatestVersion;
-        addLog('回调', `固件升级成功，当前版本已更新为 ${firmwareLatestVersion}，${regionLogSuffix()}`);
-      }, 1100);
+      openFirmwareUpgradeModal(currentVersion, firmwareLatestVersion);
     });
+
+    firmwareUpgradeCancelBtn.addEventListener('click', closeFirmwareUpgradeModal);
+
+    firmwareUpgradeRiskCheck.addEventListener('change', () => {
+      firmwareUpgradeConfirmBtn.disabled = !firmwareUpgradeRiskCheck.checked;
+    });
+
+    firmwareUpgradeConfirmBtn.addEventListener('click', confirmFirmwareUpgrade);
 
     startStreamBtn.addEventListener('click', () => {
       if (!requirePermission('canPreview', '开始预览', '实时画面预览')) return;
