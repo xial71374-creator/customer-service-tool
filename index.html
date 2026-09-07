@@ -1,0 +1,2347 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>摄像头售后远程调试工具 V1.1 原型</title>
+  <style>
+    :root {
+      --bg: #10131b;
+      --panel: #171b26;
+      --panel-2: #1d2330;
+      --panel-3: #232a39;
+      --line: #2e3647;
+      --line-soft: #252c3b;
+      --text: #edf2ff;
+      --muted: #8e99ad;
+      --muted-2: #667085;
+      --brand: #7558f6;
+      --brand-2: #5f7df7;
+      --cyan: #25d7c9;
+      --green: #38d978;
+      --yellow: #ffc34a;
+      --red: #ff6474;
+      --blue: #65a9ff;
+      --shadow: 0 18px 48px rgba(0, 0, 0, .28);
+      --radius: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background: var(--bg);
+      min-width: 1180px;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 228px 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      background: #151923;
+      border-right: 1px solid var(--line-soft);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand {
+      height: 76px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      color: #fff;
+      font-weight: 800;
+    }
+
+    .brand-title {
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .brand-sub {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav-section {
+      padding: 18px 10px 8px;
+      color: var(--muted-2);
+      font-size: 12px;
+    }
+
+    .nav-btn {
+      width: calc(100% - 16px);
+      height: 42px;
+      margin: 4px 8px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 13px;
+      background: transparent;
+      color: #b5bed0;
+      text-align: left;
+    }
+
+    .nav-btn:hover {
+      background: #202637;
+    }
+
+    .nav-btn.active {
+      background: var(--brand);
+      color: #fff;
+    }
+
+    .nav-ico {
+      width: 20px;
+      text-align: center;
+      color: currentColor;
+      font-size: 15px;
+    }
+
+    .badge {
+      min-width: 20px;
+      height: 20px;
+      border-radius: 99px;
+      padding: 0 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      background: var(--red);
+      color: #fff;
+      margin-left: auto;
+    }
+
+    .user {
+      margin-top: auto;
+      padding: 16px;
+      border-top: 1px solid var(--line-soft);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ff6e89, #ff9c5c);
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .user strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .user span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .topbar {
+      height: 58px;
+      border-bottom: 1px solid var(--line-soft);
+      background: #151923;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 18px;
+    }
+
+    .page-title {
+      font-size: 18px;
+      font-weight: 750;
+    }
+
+    .device-meta {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .top-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      min-height: 34px;
+      border-radius: 6px;
+      background: var(--panel-3);
+      border: 1px solid var(--line);
+      padding: 0 12px;
+      color: #dce5f8;
+    }
+
+    .btn:hover {
+      background: #2a3244;
+    }
+
+    .btn.primary {
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(95, 125, 247, .26);
+    }
+
+    .btn.danger {
+      border-color: rgba(255, 100, 116, .45);
+      color: #ffafb7;
+    }
+
+    .btn.ghost {
+      background: transparent;
+    }
+
+    .content {
+      padding: 12px 14px;
+      min-height: 0;
+      height: calc(100vh - 58px);
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    #debug.view.active {
+      min-height: 100%;
+    }
+
+    .debug-grid {
+      display: grid;
+      grid-template-columns: minmax(760px, 1fr) 372px;
+      gap: 12px;
+      align-items: start;
+      min-height: 100%;
+    }
+
+    .left-stack,
+    .right-stack {
+      display: grid;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .left-stack {
+      grid-template-rows: auto 1fr;
+      min-height: 100%;
+    }
+
+    .right-stack {
+      --function-height: 58%;
+      grid-template-rows: minmax(260px, var(--function-height)) 10px minmax(150px, 1fr);
+      min-height: 100%;
+      user-select: none;
+    }
+
+    .right-stack.resizing {
+      cursor: row-resize;
+    }
+
+    .resize-handle {
+      height: 10px;
+      border-radius: 6px;
+      background: linear-gradient(90deg, transparent, #3a4357 28%, #3a4357 72%, transparent);
+      position: relative;
+      cursor: row-resize;
+    }
+
+    .resize-handle::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 44px;
+      height: 3px;
+      border-radius: 99px;
+      background: #667085;
+      transform: translate(-50%, -50%);
+    }
+
+    .resize-handle:hover::after {
+      background: var(--brand-2);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+
+    .panel-head {
+      height: 38px;
+      border-bottom: 1px solid var(--line-soft);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 10px;
+    }
+
+    .panel-title {
+      font-weight: 750;
+      font-size: 15px;
+    }
+
+    .panel-sub {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .panel-body {
+      padding: 10px 12px;
+    }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: 138px minmax(0, 1fr) 120px 120px;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .reason-row {
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      gap: 8px;
+      align-items: start;
+      margin-bottom: 8px;
+    }
+
+    .reason-row label {
+      color: var(--muted);
+      font-size: 13px;
+      padding-top: 10px;
+    }
+
+    .textarea {
+      width: 100%;
+      height: 38px;
+      min-height: 38px;
+      resize: none;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: #111722;
+      color: var(--text);
+      padding: 10px 12px;
+      outline: none;
+      line-height: 1.5;
+    }
+
+    .textarea:focus {
+      border-color: var(--brand-2);
+      box-shadow: 0 0 0 3px rgba(95, 125, 247, .16);
+    }
+
+    .auth-flow {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .flow-step {
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #151b28;
+      padding: 7px 9px;
+      position: relative;
+    }
+
+    .flow-step.active {
+      border-color: rgba(37, 215, 201, .5);
+      box-shadow: 0 0 0 3px rgba(37, 215, 201, .08);
+    }
+
+    .flow-step label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .flow-step strong {
+      font-size: 13px;
+    }
+
+    .phone-preview {
+      margin-top: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #111722;
+      padding: 14px;
+    }
+
+    .phone-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .request-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-2);
+      padding: 12px;
+      margin-top: 10px;
+    }
+
+    .request-card.selected {
+      border-color: rgba(117, 88, 246, .74);
+      box-shadow: 0 0 0 3px rgba(117, 88, 246, .12);
+    }
+
+    .request-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-weight: 750;
+    }
+
+    .request-meta {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .duration-options {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .duration-btn {
+      height: 34px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: #161d2a;
+      color: #dce5f8;
+    }
+
+    .duration-btn.active {
+      border-color: var(--brand-2);
+      background: rgba(95, 125, 247, .2);
+      color: #fff;
+    }
+
+    .input {
+      width: 100%;
+      height: 34px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: #111722;
+      color: var(--text);
+      padding: 0 12px;
+      outline: none;
+    }
+
+    .input:focus {
+      border-color: var(--brand-2);
+      box-shadow: 0 0 0 3px rgba(95, 125, 247, .16);
+    }
+
+    .status-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 22px;
+      border: 1px solid var(--line);
+      border-radius: 99px;
+      padding: 0 8px;
+      color: #c9d3e6;
+      background: #151b28;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      box-shadow: 0 0 0 3px rgba(142, 153, 173, .13);
+    }
+
+    .dot.green {
+      background: var(--green);
+      box-shadow: 0 0 0 3px rgba(56, 217, 120, .13);
+    }
+
+    .dot.cyan {
+      background: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(37, 215, 201, .13);
+    }
+
+    .dot.yellow {
+      background: var(--yellow);
+      box-shadow: 0 0 0 3px rgba(255, 195, 74, .13);
+    }
+
+    .info-block {
+      border-top: 1px solid var(--line-soft);
+      padding-top: 6px;
+      margin-top: 6px;
+    }
+
+    .info-block:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+      margin-top: 0;
+    }
+
+    .section-label {
+      color: #a99dff;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(96px, 1fr));
+      gap: 5px 18px;
+    }
+
+    .kv label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 1px;
+    }
+
+    .kv strong {
+      font-size: 12px;
+      word-break: break-all;
+      display: block;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .firmware-value {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .firmware-value strong {
+      display: inline-block;
+      flex: 0 1 auto;
+      min-width: 0;
+    }
+
+    .firmware-tag {
+      height: 20px;
+      border-radius: 99px;
+      border: 1px solid rgba(56, 217, 120, .44);
+      background: rgba(56, 217, 120, .12);
+      color: #78eda6;
+      padding: 0 7px;
+      display: inline-flex;
+      align-items: center;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .firmware-upgrade-btn {
+      height: 22px;
+      border-radius: 5px;
+      border: 1px solid rgba(255, 195, 74, .5);
+      background: rgba(255, 195, 74, .14);
+      color: #ffd27b;
+      padding: 0 8px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .firmware-upgrade-btn:hover {
+      background: rgba(255, 195, 74, .22);
+    }
+
+    .video-panel .panel-body {
+      padding: 0;
+    }
+
+    .video-toolbar {
+      height: 36px;
+      border-bottom: 1px solid var(--line-soft);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+    }
+
+    .video-stage {
+      position: relative;
+      height: calc(100vh - 406px);
+      min-height: 260px;
+      background: #0e1527;
+      overflow: hidden;
+      border-radius: 0 0 8px 8px;
+      display: grid;
+      gap: 8px;
+      padding: 8px;
+    }
+
+    .video-stage.count-1 {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr;
+    }
+
+    .video-stage.count-2 {
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: 1fr;
+    }
+
+    .video-stage.count-4 {
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+    }
+
+    .camera-tile {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .08);
+      background:
+        radial-gradient(circle at 52% 48%, rgba(95, 125, 247, .18), transparent 20%),
+        linear-gradient(180deg, #10172b, #111a33 52%, #132447);
+      cursor: zoom-in;
+      min-height: 0;
+    }
+
+    .camera-tile::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px);
+      background-size: 42px 42px;
+      opacity: .22;
+    }
+
+    .camera-tile.has-real-video {
+      background: #05070c;
+    }
+
+    .camera-tile.has-real-video::before,
+    .camera-tile.has-real-video .camera-placeholder {
+      display: none;
+    }
+
+    .real-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+      background: #05070c;
+    }
+
+    .camera-tile.has-real-video .real-video {
+      display: block;
+    }
+
+    .camera-tile.zoomed {
+      position: absolute;
+      inset: 8px;
+      z-index: 5;
+      cursor: zoom-out;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .42);
+    }
+
+    .camera-placeholder {
+      position: absolute;
+      left: 50%;
+      top: 48%;
+      transform: translate(-50%, -50%);
+      color: rgba(255, 255, 255, .36);
+      font-size: 42px;
+    }
+
+    .live-tag {
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      height: 24px;
+      padding: 0 9px;
+      border-radius: 5px;
+      background: var(--red);
+      color: #fff;
+      font-weight: 750;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .channel-name {
+      position: absolute;
+      left: 14px;
+      bottom: 12px;
+      color: rgba(237, 242, 255, .86);
+      font-size: 12px;
+      z-index: 1;
+    }
+
+    .video-metrics {
+      position: absolute;
+      right: 14px;
+      bottom: 12px;
+      color: rgba(237, 242, 255, .74);
+      font-size: 12px;
+      text-align: right;
+      line-height: 1.8;
+      z-index: 1;
+    }
+
+    .zoom-tip {
+      position: absolute;
+      right: 14px;
+      top: 14px;
+      color: rgba(237, 242, 255, .72);
+      font-size: 12px;
+      z-index: 1;
+    }
+
+    .right-panel {
+      box-shadow: none;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 2px;
+      border-bottom: 1px solid var(--line-soft);
+      padding: 0 12px;
+    }
+
+    .tab {
+      height: 34px;
+      min-width: 76px;
+      background: transparent;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+    }
+
+    .tab.active {
+      color: #c9c1ff;
+      border-bottom-color: var(--brand);
+    }
+
+    .tab-content {
+      display: none;
+      padding: 10px;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .control-group {
+      margin-bottom: 10px;
+    }
+
+    .control-title {
+      color: var(--muted);
+      font-size: 12px;
+      margin: 0 0 6px;
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .control-btn {
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: var(--panel-3);
+      color: #dde6f8;
+      font-size: 13px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .control-btn:hover {
+      border-color: #46516a;
+      background: #2b3447;
+    }
+
+    .control-btn.warning {
+      color: #ffd1d6;
+      border-color: rgba(255, 100, 116, .55);
+    }
+
+    .control-btn.disabled {
+      color: #6f788a;
+      background: #1a1f2a;
+      cursor: not-allowed;
+    }
+
+    .param-card {
+      margin-top: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #151b28;
+      padding: 9px;
+    }
+
+    .param-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .param-head strong {
+      font-size: 13px;
+    }
+
+    .param-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .param-field label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .param-help {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      margin-top: 6px;
+    }
+
+    .inline-control {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .range {
+      width: 100%;
+      accent-color: var(--brand-2);
+    }
+
+    .ptz {
+      display: grid;
+      grid-template-columns: repeat(3, 54px);
+      grid-template-rows: repeat(3, 36px);
+      gap: 6px;
+      justify-content: center;
+      margin: 2px 0 10px;
+    }
+
+    .ptz button {
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: var(--panel-3);
+      color: #e7edfb;
+      font-size: 18px;
+    }
+
+    .log-panel {
+      min-height: 0;
+    }
+
+    .log-tools {
+      margin-left: auto;
+      display: flex;
+      gap: 6px;
+    }
+
+    .tiny-btn {
+      height: 26px;
+      min-width: 44px;
+      border-radius: 5px;
+      background: #202638;
+      border: 1px solid var(--line);
+      color: #abb6c9;
+      font-size: 12px;
+    }
+
+    .log-list {
+      height: 184px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 6px 12px 10px;
+    }
+
+    .log-row {
+      display: grid;
+      grid-template-columns: 80px 42px 1fr;
+      gap: 8px;
+      align-items: start;
+      padding: 4px 0;
+      color: #c8d1e3;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .log-time {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .log-type {
+      height: 20px;
+      border-radius: 5px;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      background: rgba(101, 169, 255, .16);
+      color: #80bbff;
+      font-size: 12px;
+    }
+
+    .log-type.err {
+      color: #ff9ba5;
+      background: rgba(255, 100, 116, .14);
+    }
+
+    .log-type.auth {
+      color: #a99dff;
+      background: rgba(117, 88, 246, .18);
+    }
+
+    .data-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .metric {
+      padding: 16px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .metric label {
+      display: block;
+      color: var(--muted);
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+
+    .metric strong {
+      font-size: 24px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line-soft);
+      padding: 13px 12px;
+      text-align: left;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      background: #151b27;
+    }
+
+    td {
+      color: #dce4f4;
+    }
+
+    .empty {
+      display: grid;
+      place-items: center;
+      min-height: 320px;
+      color: var(--muted);
+      text-align: center;
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .02);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 8, 14, .66);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      width: 460px;
+      border-radius: 8px;
+      background: #171c28;
+      border: 1px solid var(--line);
+      box-shadow: 0 28px 80px rgba(0, 0, 0, .46);
+    }
+
+    .record-modal {
+      width: min(920px, calc(100vw - 48px));
+      max-height: calc(100vh - 56px);
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      overflow: hidden;
+    }
+
+    .modal-head {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line-soft);
+      font-weight: 750;
+    }
+
+    .modal-body {
+      padding: 20px;
+      color: #c7d0e3;
+      line-height: 1.7;
+    }
+
+    .record-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line-soft);
+      background: #151b27;
+    }
+
+    .record-summary .kv {
+      min-width: 0;
+    }
+
+    .record-summary .kv label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .record-summary .kv strong {
+      display: block;
+      color: #e6edfb;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .record-log-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .record-log-toolbar .chip {
+      margin-right: auto;
+    }
+
+    .record-log-body {
+      min-height: 0;
+      overflow: auto;
+      background: #0b1018;
+      padding: 14px 18px 18px;
+    }
+
+    .record-log-pre {
+      margin: 0;
+      color: #cbd5e8;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .modal-foot {
+      border-top: 1px solid var(--line-soft);
+      padding: 14px 20px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .risk-box {
+      margin-top: 14px;
+      border: 1px solid rgba(255, 100, 116, .38);
+      background: rgba(255, 100, 116, .08);
+      border-radius: 8px;
+      padding: 12px;
+      color: #ffd7db;
+      font-size: 13px;
+    }
+
+    .check-row {
+      margin-top: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      color: #dce5f8;
+      font-size: 13px;
+    }
+
+    .check-row input {
+      margin-top: 3px;
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: .45;
+      box-shadow: none;
+    }
+
+    @media (max-width: 1360px) {
+      .debug-grid {
+        grid-template-columns: 1fr 340px;
+      }
+
+      .info-grid {
+        grid-template-columns: repeat(3, minmax(120px, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">D</div>
+        <div>
+          <div class="brand-title">调试工具</div>
+          <div class="brand-sub">Camera Debug Console</div>
+        </div>
+      </div>
+
+      <div class="nav-section">主要功能</div>
+      <button class="nav-btn active" data-view="debug"><span class="nav-ico">◎</span>设备调试</button>
+      <button class="nav-btn" data-view="records"><span class="nav-ico">◷</span>调试记录<span class="badge">3</span></button>
+      <button class="nav-btn" data-view="knowledge"><span class="nav-ico">□</span>知识库</button>
+
+      <div class="nav-section">系统</div>
+      <button class="nav-btn" data-view="settings"><span class="nav-ico">⚙</span>设置</button>
+
+      <div class="user">
+        <div class="avatar">李</div>
+        <div>
+          <strong>李峥</strong>
+          <span>售后客服</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="page-title" id="pageTitle">设备调试</div>
+        <div class="device-meta">VUID: VSTK059176NZFWL · IPC-Pro 400W 云台版</div>
+        <div class="top-actions">
+          <button class="btn" id="refreshBtn">刷新</button>
+          <button class="btn danger" id="revokeBtn">模拟用户撤销</button>
+          <button class="btn" id="disconnectBtn">断开连接</button>
+        </div>
+      </header>
+
+      <section class="content">
+        <div class="view active" id="debug">
+          <div class="debug-grid">
+            <div class="left-stack">
+              <section class="panel">
+                <div class="panel-head">
+                  <div class="panel-title">设备查询与授权</div>
+                  <div class="panel-sub">支持四大区设备查询后建立 MQTT 调试连接</div>
+                </div>
+                <div class="panel-body">
+                  <div class="search-row">
+                    <select class="input" id="regionSelect" aria-label="查询区域">
+                      <option value="CN" selected>中国区</option>
+                      <option value="NA">北美区</option>
+                      <option value="EU">欧洲区</option>
+                      <option value="APAC">亚太区</option>
+                    </select>
+                    <input class="input" id="deviceInput" value="VSTK059176NZFWL" aria-label="设备 UID 或 VUID">
+                    <button class="btn" id="searchBtn">查询设备</button>
+                    <button class="btn primary" id="authBtn">申请授权</button>
+                  </div>
+                  <div class="reason-row">
+                    <label for="reasonInput">申请理由</label>
+                    <textarea class="textarea" id="reasonInput" aria-label="申请理由" placeholder="请输入申请理由，用户将在 App 授权弹窗中看到该内容">排查摄像头画面与网络状态</textarea>
+                  </div>
+
+                  <div class="auth-flow">
+                    <div class="flow-step active">
+                      <label>1. 选择区域并输入 VUID</label>
+                      <strong id="flowDeviceId">中国区 · VSTK059176NZFWL</strong>
+                    </div>
+                    <div class="flow-step active">
+                      <label>2. 发送到用户 App</label>
+                      <strong id="requestState">待发起申请</strong>
+                    </div>
+                    <div class="flow-step">
+                      <label>3. 用户选择时长</label>
+                      <strong id="durationState">由 App 端选择</strong>
+                    </div>
+                    <div class="flow-step">
+                      <label>4. 建立调试连接</label>
+                      <strong id="connectState">等待授权</strong>
+                    </div>
+                  </div>
+
+                  <div class="status-line">
+                    <span class="chip"><span class="dot green"></span><span id="onlineText">在线</span></span>
+                    <span class="chip"><span class="dot cyan"></span><span id="authText">已授权 · 剩余 24:18</span></span>
+                    <span class="chip"><span class="dot cyan"></span><span id="mqttText">MQTT 已连接</span></span>
+                    <span class="chip">App 端提示: 客服正在查看</span>
+                    <span class="chip">授权范围: 全部调试内容</span>
+                    <span class="chip"><span class="dot cyan"></span><span id="queryRegionText">查询区域: 中国区</span></span>
+                    <span class="chip"><span class="dot cyan"></span><span id="queryNodeText">区域节点: cn-east</span></span>
+                    <span class="chip">多申请策略: 用户仅可接受 1 个售后申请</span>
+                  </div>
+
+                  <div class="info-block">
+                    <div class="section-label">基本信息</div>
+                    <div class="info-grid">
+                      <div class="kv"><label>设备 ID</label><strong id="deviceIdValue">VSTK059176NZFWL</strong></div>
+                      <div class="kv"><label>产品类型</label><strong>常电 Wi-Fi</strong></div>
+                      <div class="kv"><label>产品型号</label><strong>QC6</strong></div>
+                      <div class="kv"><label>所属区域</label><strong id="regionNameValue">中国区</strong></div>
+                      <div class="kv"><label>区域节点</label><strong id="regionNodeValue">cn-east</strong></div>
+                      <div class="kv">
+                        <label>固件版本号</label>
+                        <div class="firmware-value">
+                          <strong id="firmwareVersion">10.194.142.34</strong>
+                          <span class="firmware-tag" id="firmwareLatestTag" hidden>最新</span>
+                          <button class="firmware-upgrade-btn" id="firmwareUpgradeBtn" data-danger="true" data-command="远程升级固件" type="button">固件升级</button>
+                        </div>
+                      </div>
+                      <div class="kv"><label>VUID</label><strong id="vuidValue">VSTK059176NZFWL</strong></div>
+                      <div class="kv"><label>MAC 地址</label><strong>--</strong></div>
+                      <div class="kv"><label>通信方式</label><strong>P2P</strong></div>
+                      <div class="kv"><label>解码模式</label><strong>H.264</strong></div>
+                      <div class="kv"><label>最新固件</label><strong id="latestFirmware">10.194.150.02 · 可升级</strong></div>
+                    </div>
+                  </div>
+
+                  <div class="info-block">
+                    <div class="section-label">网络信息</div>
+                    <div class="info-grid">
+                      <div class="kv"><label>信号</label><strong>100%</strong></div>
+                      <div class="kv"><label>配网方式</label><strong>Wi-Fi</strong></div>
+                      <div class="kv"><label>SSID</label><strong>Tenda_robbey[192.168.2.199]</strong></div>
+                      <div class="kv"><label>PASS</label><strong>******</strong></div>
+                    </div>
+                  </div>
+
+                  <div class="info-block">
+                    <div class="section-label">检测与报警</div>
+                    <div class="info-grid">
+                      <div class="kv"><label>运动侦测</label><strong>人形侦测</strong></div>
+                      <div class="kv"><label>人形框定</label><strong>打开</strong></div>
+                      <div class="kv"><label>人形跟踪</label><strong>关闭</strong></div>
+                      <div class="kv"><label>夜视模式</label><strong>黑白夜视</strong></div>
+                      <div class="kv"><label>白光灯</label><strong>关闭</strong></div>
+                      <div class="kv"><label>SD 卡</label><strong>正常 · 剩余 57GB</strong></div>
+                      <div class="kv"><label>云存储</label><strong>已开通</strong></div>
+                      <div class="kv"><label>录像计划</label><strong>开启</strong></div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="panel video-panel">
+                <div class="panel-head">
+                  <div class="panel-title">实时画面</div>
+                  <span class="chip"><span class="dot cyan"></span>直播中</span>
+                  <div class="top-actions">
+                    <button class="btn" id="shotBtn">截图</button>
+                    <button class="btn" id="recordBtn">录制</button>
+                    <button class="btn" id="fullBtn">全屏</button>
+                  </div>
+                </div>
+                <div class="panel-body">
+                  <div class="video-toolbar">
+                    <span class="chip" id="streamResolution">主码流 · 1280x720</span>
+                    <span class="chip">15 FPS</span>
+                    <span class="chip">225 Kbps</span>
+                    <button class="tiny-btn lens-btn" data-lens="1">1 镜头</button>
+                    <button class="tiny-btn lens-btn" data-lens="2">2 镜头</button>
+                    <button class="tiny-btn lens-btn" data-lens="4">4 镜头</button>
+                    <button class="tiny-btn" id="loadRealVideoBtn">接入真实流</button>
+                    <span class="chip">保存周期: 1 个月</span>
+                  </div>
+                  <div class="video-stage count-4" id="videoStage">
+                    <div class="camera-tile" data-channel="1">
+                      <video class="real-video" muted autoplay playsinline loop></video>
+                      <div class="live-tag"><span class="dot"></span>LIVE</div>
+                      <div class="zoom-tip">点击放大</div>
+                      <div class="camera-placeholder">▣</div>
+                      <div class="channel-name">镜头 1 · 主画面</div>
+                      <div class="video-metrics">
+                        <div><span class="tile-resolution">1280x720</span> · 15 FPS</div>
+                        <div>225 Kbps</div>
+                      </div>
+                    </div>
+                    <div class="camera-tile" data-channel="2">
+                      <video class="real-video" muted autoplay playsinline loop></video>
+                      <div class="live-tag"><span class="dot"></span>LIVE</div>
+                      <div class="zoom-tip">点击放大</div>
+                      <div class="camera-placeholder">▣</div>
+                      <div class="channel-name">镜头 2 · 广角</div>
+                      <div class="video-metrics">
+                        <div><span class="tile-resolution">1280x720</span> · 15 FPS</div>
+                        <div>218 Kbps</div>
+                      </div>
+                    </div>
+                    <div class="camera-tile" data-channel="3">
+                      <video class="real-video" muted autoplay playsinline loop></video>
+                      <div class="live-tag"><span class="dot"></span>LIVE</div>
+                      <div class="zoom-tip">点击放大</div>
+                      <div class="camera-placeholder">▣</div>
+                      <div class="channel-name">镜头 3 · 长焦</div>
+                      <div class="video-metrics">
+                        <div><span class="tile-resolution">1280x720</span> · 15 FPS</div>
+                        <div>231 Kbps</div>
+                      </div>
+                    </div>
+                    <div class="camera-tile" data-channel="4">
+                      <video class="real-video" muted autoplay playsinline loop></video>
+                      <div class="live-tag"><span class="dot"></span>LIVE</div>
+                      <div class="zoom-tip">点击放大</div>
+                      <div class="camera-placeholder">▣</div>
+                      <div class="channel-name">镜头 4 · 辅助</div>
+                      <div class="video-metrics">
+                        <div><span class="tile-resolution">1280x720</span> · 15 FPS</div>
+                        <div>209 Kbps</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div class="right-stack">
+              <section class="panel right-panel">
+                <div class="panel-head">
+                  <div class="panel-title">设备功能</div>
+                  <span class="chip">物模型: IPC-Pro 云台</span>
+                </div>
+                <div class="tabs">
+                  <button class="tab active" data-tab="basic">基础功能</button>
+                  <button class="tab" data-tab="ptz">云台控制</button>
+                  <button class="tab" data-tab="advanced">高级功能</button>
+                  <button class="tab" data-tab="network">网络诊断</button>
+                </div>
+
+                <div class="tab-content active" id="tab-basic">
+                  <div class="control-group">
+                    <p class="control-title">画面设置</p>
+                    <div class="control-grid">
+                      <button class="control-btn" data-command="画面翻转">画面翻转</button>
+                      <button class="control-btn" data-command="夜视模式">夜视模式</button>
+                      <button class="control-btn" data-command="高清模式">高清模式</button>
+                      <button class="control-btn" data-command="流畅模式">流畅模式</button>
+                      <button class="control-btn" data-command="WDR">WDR</button>
+                      <button class="control-btn" data-command="OSD 水印">OSD 水印</button>
+                    </div>
+                  </div>
+                  <div class="control-group">
+                    <p class="control-title">音频与码流</p>
+                    <div class="inline-control">
+                      <input class="range" id="volumeRange" type="range" min="0" max="100" value="65" aria-label="设备音量">
+                      <button class="control-btn" id="setVolumeBtn">音量 65</button>
+                    </div>
+                    <div class="inline-control">
+                      <select class="input" id="resolutionSelect" aria-label="切换分辨率">
+                        <option value="1920x1080">高清 1080P</option>
+                        <option value="1280x720" selected>标清 720P</option>
+                        <option value="640x360">流畅 360P</option>
+                      </select>
+                      <button class="control-btn" id="setResolutionBtn">切换分辨率</button>
+                    </div>
+                  </div>
+                  <div class="control-group">
+                    <p class="control-title">检测与告警</p>
+                    <div class="control-grid">
+                      <button class="control-btn" data-command="移动检测">移动检测</button>
+                      <button class="control-btn" data-command="人形检测">人形检测</button>
+                      <button class="control-btn" data-command="声音检测">声音检测</button>
+                      <button class="control-btn" data-command="异常检测">异常检测</button>
+                      <button class="control-btn disabled" title="当前物模型未开放区域入侵能力">区域入侵</button>
+                      <button class="control-btn" data-command="告警测试">告警测试</button>
+                    </div>
+                  </div>
+                  <div class="control-group">
+                    <p class="control-title">存储管理</p>
+                    <div class="control-grid">
+                      <button class="control-btn" data-command="SD 卡状态">SD 卡状态</button>
+                      <button class="control-btn" data-command="云存储状态">云存储</button>
+                      <button class="control-btn warning" data-danger="true" data-command="格式化 SD 卡">格式化 SD</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="tab-content" id="tab-ptz">
+                  <div class="ptz">
+                    <button data-command="云台左上">↖</button>
+                    <button data-command="云台向上">↑</button>
+                    <button data-command="云台右上">↗</button>
+                    <button data-command="云台向左">←</button>
+                    <button data-command="云台停止">■</button>
+                    <button data-command="云台向右">→</button>
+                    <button data-command="云台左下">↙</button>
+                    <button data-command="云台向下">↓</button>
+                    <button data-command="云台右下">↘</button>
+                  </div>
+                  <div class="control-grid">
+                    <button class="control-btn" data-command="预置位调用">预置位</button>
+                    <button class="control-btn" data-command="云台校正">云台校正</button>
+                    <button class="control-btn" data-command="巡航控制">巡航</button>
+                  </div>
+                  <div class="param-card">
+                    <div class="param-head">
+                      <strong>电机默认参数</strong>
+                      <span class="chip" id="motorReadState">未读取</span>
+                    </div>
+                    <div class="param-form">
+                      <div class="param-field">
+                        <label for="motorStep">电机步长</label>
+                        <input class="input" id="motorStep" type="number" min="1" max="100" value="" placeholder="先读取">
+                      </div>
+                      <div class="param-field">
+                        <label for="motorCenterStep">居中步长</label>
+                        <input class="input" id="motorCenterStep" type="number" min="1" max="100" value="" placeholder="先读取">
+                      </div>
+                    </div>
+                    <div class="control-grid">
+                      <button class="control-btn" id="readMotorParams">读取参数</button>
+                      <button class="control-btn" id="saveMotorParams">保存修改</button>
+                      <button class="control-btn disabled" title="读取当前参数后展示设备返回值">当前值</button>
+                    </div>
+                    <div class="param-help">修改前必须先读取设备当前数据；保存后通过 MQTT 下发，并等待设备回调后刷新页面状态。</div>
+                  </div>
+                </div>
+
+                <div class="tab-content" id="tab-advanced">
+                  <div class="control-grid">
+                    <button class="control-btn warning" data-danger="true" data-command="设备重启">重启设备</button>
+                    <button class="control-btn disabled" title="当前版本暂不支持恢复出厂">恢复出厂</button>
+                    <button class="control-btn" data-command="拉取设备日志">拉取日志</button>
+                    <button class="control-btn" data-command="刷新录像计划">录像计划</button>
+                    <button class="control-btn" data-command="图像恢复">图像恢复</button>
+                    <button class="control-btn disabled" title="当前角色暂不开放原始 MQTT 数据">MQTT 原始</button>
+                  </div>
+                </div>
+
+                <div class="tab-content" id="tab-network">
+                  <div class="control-grid">
+                    <button class="control-btn" data-command="网络质量检测">质量检测</button>
+                    <button class="control-btn" data-command="P2P 状态刷新">P2P 状态</button>
+                    <button class="control-btn" data-command="云转发状态刷新">云转发</button>
+                    <button class="control-btn" data-command="延迟检测">延迟检测</button>
+                    <button class="control-btn" data-command="丢包检测">丢包检测</button>
+                    <button class="control-btn disabled" title="当前设备为 Wi-Fi 设备">4G 状态</button>
+                  </div>
+                </div>
+              </section>
+
+              <div class="resize-handle" id="rightResizeHandle" title="拖动调整设备功能和指令日志区域高度"></div>
+
+              <section class="panel log-panel">
+                <div class="panel-head">
+                  <div class="panel-title">指令日志</div>
+                  <span class="chip">最近 5 条</span>
+                  <div class="log-tools">
+                    <button class="tiny-btn" id="allLogBtn">全部</button>
+                    <button class="tiny-btn" id="errLogBtn">错误</button>
+                    <button class="tiny-btn" id="clearLogBtn">清空</button>
+                  </div>
+                </div>
+                <div class="log-list" id="logList">
+                  <div class="log-row"><span class="log-time">15:19:37</span><span class="log-type auth">授权</span><span>用户授权验证通过，授权有效期 30 分钟</span></div>
+                  <div class="log-row"><span class="log-time">15:19:38</span><span class="log-type">系统</span><span>设备鉴权成功，已建立 MQTT 调试连接</span></div>
+                  <div class="log-row"><span class="log-time">15:19:39</span><span class="log-type">系统</span><span>设备在线，固件版本 v3.2.1-2026</span></div>
+                  <div class="log-row"><span class="log-time">15:19:40</span><span class="log-type">视频</span><span>实时画面已开启，用户已在 App 端看到访问提示</span></div>
+                  <div class="log-row"><span class="log-time">15:19:41</span><span class="log-type">系统</span><span>物模型已加载：IPC-Pro 云台系列，38 项功能</span></div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+
+        <div class="view" id="records">
+          <div class="data-grid">
+            <div class="metric"><label>今日调试次数</label><strong>18</strong></div>
+            <div class="metric"><label>授权成功率</label><strong>82%</strong></div>
+            <div class="metric"><label>平均定位时长</label><strong>12m</strong></div>
+            <div class="metric"><label>保存周期</label><strong>1个月</strong></div>
+          </div>
+          <section class="panel">
+              <div class="panel-head">
+              <div class="panel-title">调试记录</div>
+              <div class="panel-sub">按设备、操作人和时间查询历史调试记录</div>
+              <div class="top-actions">
+                <input class="input" style="width:220px" value="VSTK059176NZFWL">
+                <button class="btn">查询</button>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>记录 ID</th>
+                  <th>设备</th>
+                  <th>操作人</th>
+                  <th>授权状态</th>
+                  <th>开始时间</th>
+                  <th>结束时间</th>
+                  <th>调试摘要</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>DBG202605110018</td>
+                  <td>VSTK059176NZFWL</td>
+                  <td>李峥</td>
+                  <td>已完成</td>
+                  <td>2026-05-11 15:19</td>
+                  <td>2026-05-11 15:46</td>
+                  <td>日志 12 · 指令 5 · 失败 0 · 高危 1</td>
+                  <td><button class="tiny-btn record-detail-btn" data-record-id="DBG202605110018">详情</button></td>
+                </tr>
+                <tr>
+                  <td>DBG202605110012</td>
+                  <td>VQ6X9130031</td>
+                  <td>周棠</td>
+                  <td>用户撤销</td>
+                  <td>2026-05-11 11:08</td>
+                  <td>2026-05-11 11:16</td>
+                  <td>日志 8 · 指令 2 · 失败 1 · 高危 0</td>
+                  <td><button class="tiny-btn record-detail-btn" data-record-id="DBG202605110012">详情</button></td>
+                </tr>
+                <tr>
+                  <td>DBG202605100089</td>
+                  <td>IPC4G7782009</td>
+                  <td>李峥</td>
+                  <td>授权过期</td>
+                  <td>2026-05-10 18:33</td>
+                  <td>2026-05-10 19:03</td>
+                  <td>日志 10 · 指令 4 · 失败 2 · 高危 0</td>
+                  <td><button class="tiny-btn record-detail-btn" data-record-id="DBG202605100089">详情</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+        </div>
+
+        <div class="view" id="knowledge">
+          <div class="empty">
+            <div>
+              <h2>知识库入口</h2>
+              <p>后续可根据设备型号、错误码和日志关键词推荐排查方案。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="view" id="settings">
+          <section class="panel">
+            <div class="panel-head">
+              <div class="panel-title">基础配置</div>
+              <div class="panel-sub">展示关键配置项，权限细分后续扩展</div>
+            </div>
+            <div class="panel-body">
+              <div class="info-grid">
+                <div class="kv"><label>App 可选授权时长</label><strong>30 分钟 / 2 小时 / 24 小时</strong></div>
+                <div class="kv"><label>日志保存周期</label><strong>1 个月</strong></div>
+                <div class="kv"><label>录像保存周期</label><strong>1 个月</strong></div>
+                <div class="kv"><label>连接方式</label><strong>MQTT</strong></div>
+                <div class="kv"><label>权限策略</label><strong>暂不区分角色</strong></div>
+                <div class="kv"><label>高危操作</label><strong>二次确认</strong></div>
+                <div class="kv"><label>App 提示</label><strong>客服正在查看</strong></div>
+                <div class="kv"><label>授权撤销</label><strong>立即断开</strong></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modal">
+    <div class="modal">
+      <div class="modal-head" id="modalTitle">高敏操作确认</div>
+      <div class="modal-body" id="modalBody">
+        该操作可能影响用户设备或数据。确认后系统将通过 MQTT 下发指令，并记录客服操作日志。
+        <div class="risk-box" id="riskText">请确认当前操作确实用于用户售后问题排查。</div>
+        <label class="check-row">
+          <input type="checkbox" id="riskCheck">
+          <span>我已确认该高敏操作的影响，并确认用户问题排查需要执行该操作。</span>
+        </label>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" id="cancelModal">取消</button>
+        <button class="btn primary" id="confirmModal" disabled>确认执行</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="appAuthModal">
+    <div class="modal">
+      <div class="modal-head">用户 App 授权弹窗模拟</div>
+      <div class="modal-body">
+        <p style="margin-top:0">当前账号同时收到多个售后远程调试申请。用户只能接受其中 1 个申请；接受后，其余待处理申请将自动失效，避免多个客服同时查看或控制同一设备。</p>
+
+        <div class="phone-preview">
+          <div class="phone-head">
+            <span>小鹰看看 App</span>
+            <span>设备: 大门 · QC6</span>
+          </div>
+
+          <div class="request-card selected" data-app-request="李峥">
+            <div class="request-title">
+              <span>李峥申请远程调试</span>
+              <span class="chip">当前客服</span>
+            </div>
+            <div class="request-meta">
+              原因: <span id="appReasonText">排查摄像头画面与网络状态</span><br>
+              允许内容: 查看设备信息、实时画面、历史录像、日志和设备控制
+            </div>
+            <div class="duration-options">
+              <button class="duration-btn active" data-duration="30 分钟">30 分钟</button>
+              <button class="duration-btn" data-duration="2 小时">2 小时</button>
+              <button class="duration-btn" data-duration="24 小时">24 小时</button>
+            </div>
+          </div>
+
+          <div class="request-card" data-app-request="周棠">
+            <div class="request-title">
+              <span>周棠申请远程调试</span>
+              <span class="chip">待处理</span>
+            </div>
+            <div class="request-meta">
+              原因: 同一设备售后跟进<br>
+              处理策略: 若接受李峥申请，该申请自动失效
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" id="rejectAppAuth">拒绝</button>
+        <button class="btn primary" id="approveAppAuth">同意授权</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="recordDetailModal">
+    <div class="modal record-modal">
+      <div class="modal-head" id="recordDetailTitle">调试记录详情</div>
+      <div class="record-summary" id="recordDetailSummary"></div>
+      <div class="record-log-toolbar">
+        <span class="chip" id="recordLogCount">0 条日志</span>
+        <button class="tiny-btn" id="copyRecordLogBtn">复制</button>
+      </div>
+      <div class="record-log-body">
+        <pre class="record-log-pre" id="recordLogText"></pre>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" id="closeRecordDetail">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const logList = document.getElementById('logList');
+    const modal = document.getElementById('modal');
+    const appAuthModal = document.getElementById('appAuthModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    const riskText = document.getElementById('riskText');
+    const riskCheck = document.getElementById('riskCheck');
+    const confirmModal = document.getElementById('confirmModal');
+    const recordDetailModal = document.getElementById('recordDetailModal');
+    const recordDetailTitle = document.getElementById('recordDetailTitle');
+    const recordDetailSummary = document.getElementById('recordDetailSummary');
+    const recordLogCount = document.getElementById('recordLogCount');
+    const recordLogText = document.getElementById('recordLogText');
+    let pendingCommand = '';
+    let activeRecordId = '';
+    let selectedDuration = '30 分钟';
+    let motorParamsLoaded = false;
+    let connected = true;
+    let authorized = true;
+    let firmwareLatestVersion = '10.194.150.02';
+
+    const regionCatalog = {
+      CN: {
+        name: '中国区',
+        node: 'cn-east',
+        route: 'CN 调试网关',
+        endpoint: '/api/debug/device/query?region=CN',
+        defaultCurrent: '10.194.142.34',
+        defaultLatest: '10.194.150.02'
+      },
+      NA: {
+        name: '北美区',
+        node: 'us-west',
+        route: 'NA 调试网关',
+        endpoint: '/api/debug/device/query?region=NA',
+        defaultCurrent: '10.188.090.12',
+        defaultLatest: '10.188.096.08'
+      },
+      EU: {
+        name: '欧洲区',
+        node: 'eu-central',
+        route: 'EU 调试网关',
+        endpoint: '/api/debug/device/query?region=EU',
+        defaultCurrent: '10.181.070.03',
+        defaultLatest: '10.181.080.11'
+      },
+      APAC: {
+        name: '亚太区',
+        node: 'ap-southeast',
+        route: 'APAC 调试网关',
+        endpoint: '/api/debug/device/query?region=APAC',
+        defaultCurrent: '10.176.032.05',
+        defaultLatest: '10.176.040.09'
+      }
+    };
+
+    const deviceFirmwareCatalog = {
+      VSTK059176NZFWL: {
+        CN: { current: '10.194.142.34', latest: '10.194.150.02' },
+        NA: { current: '10.188.090.12', latest: '10.188.096.08' },
+        EU: { current: '10.181.070.03', latest: '10.181.080.11' },
+        APAC: { current: '10.176.032.05', latest: '10.176.040.09' }
+      },
+      VQ6X9130031: {
+        CN: { current: '10.194.150.02', latest: '10.194.150.02' },
+        NA: { current: '10.188.096.08', latest: '10.188.096.08' },
+        EU: { current: '10.181.080.11', latest: '10.181.080.11' },
+        APAC: { current: '10.176.040.09', latest: '10.176.040.09' }
+      },
+      IPC4G7782009: {
+        CN: { current: '10.188.090.12', latest: '10.188.096.08' },
+        NA: { current: '10.188.090.12', latest: '10.188.096.08' },
+        EU: { current: '10.188.090.12', latest: '10.188.096.08' },
+        APAC: { current: '10.188.090.12', latest: '10.188.096.08' }
+      }
+    };
+
+    function getRegionMeta(regionKey) {
+      return regionCatalog[regionKey] || regionCatalog.CN;
+    }
+
+    function getQueryFirmware(regionKey, deviceId) {
+      const resolvedRegionKey = regionCatalog[regionKey] ? regionKey : 'CN';
+      const regionMeta = regionCatalog[resolvedRegionKey];
+      const normalizedDeviceId = deviceId.trim().toUpperCase();
+      const deviceEntry = deviceFirmwareCatalog[normalizedDeviceId]?.[resolvedRegionKey];
+      const firmware = deviceEntry || {
+        current: regionMeta.defaultCurrent,
+        latest: regionMeta.defaultLatest
+      };
+      return {
+        regionKey: resolvedRegionKey,
+        ...regionMeta,
+        deviceId: normalizedDeviceId || '--',
+        ...firmware
+      };
+    }
+
+    function syncRegionBadges(regionMeta) {
+      document.getElementById('queryRegionText').textContent = `查询区域: ${regionMeta.name}`;
+      document.getElementById('queryNodeText').textContent = `区域节点: ${regionMeta.node}`;
+    }
+
+    function syncQueryContext(regionMeta, deviceId) {
+      const normalizedDeviceId = deviceId || '--';
+      document.getElementById('flowDeviceId').textContent = `${regionMeta.name} · ${normalizedDeviceId}`;
+      document.getElementById('deviceIdValue').textContent = normalizedDeviceId;
+      document.getElementById('vuidValue').textContent = normalizedDeviceId;
+      document.getElementById('regionNameValue').textContent = regionMeta.name;
+      document.getElementById('regionNodeValue').textContent = regionMeta.node;
+      syncRegionBadges(regionMeta);
+    }
+
+    const debugRecordDetails = {
+      DBG202605110018: {
+        id: 'DBG202605110018',
+        device: 'VSTK059176NZFWL',
+        model: 'IPC-Pro 400W 云台版',
+        operator: '李峥',
+        account: 'CS001',
+        status: '已完成',
+        startedAt: '2026-05-11 15:19',
+        endedAt: '2026-05-11 15:46',
+        logs: [
+          '[2026-05-11 15:19:37] [授权] 李峥(CS001) 申请远程调试 device=VSTK059176NZFWL reason=排查摄像头画面与网络状态',
+          '[2026-05-11 15:19:38] [系统] 用户授权通过 duration=30分钟 authId=AUTH202605110018',
+          '[2026-05-11 15:19:39] [查询] 查询设备基础信息 region=CN node=cn-east firmware=10.194.142.34 latest=10.194.150.02 online=true mqtt=connected',
+          '[2026-05-11 15:19:41] [系统] 物模型已加载 model=IPC-Pro云台 commandCount=38',
+          '[2026-05-11 15:20:02] [指令] 下发 夜视模式 command=night_mode value=auto requestId=req_1715412002',
+          '[2026-05-11 15:20:03] [回调] 夜视模式执行成功 requestId=req_1715412002 result=ok',
+          '[2026-05-11 15:21:18] [指令] 下发 云台向右 command=ptz_ctrl direction=right step=12 requestId=req_1715412078',
+          '[2026-05-11 15:21:19] [回调] 云台向右执行成功 requestId=req_1715412078 result=ok',
+          '[2026-05-11 15:22:16] [指令] 下发 固件升级 command=firmware_upgrade current=10.194.142.34 target=10.194.150.02 requestId=req_1715412136 risk=high',
+          '[2026-05-11 15:22:18] [系统] 设备进入升级流程 status=upgrading requestId=req_1715412136',
+          '[2026-05-11 15:24:41] [回调] 固件升级成功 current=10.194.150.02 requestId=req_1715412136',
+          '[2026-05-11 15:46:00] [系统] 客服主动断开连接 session=completed'
+        ]
+      },
+      DBG202605110012: {
+        id: 'DBG202605110012',
+        device: 'VQ6X9130031',
+        model: 'IPC-Pro 400W 云台版',
+        operator: '周棠',
+        account: 'CS008',
+        status: '用户撤销',
+        startedAt: '2026-05-11 11:08',
+        endedAt: '2026-05-11 11:16',
+        logs: [
+          '[2026-05-11 11:08:12] [授权] 周棠(CS008) 申请远程调试 device=VQ6X9130031 reason=同一设备售后跟进',
+          '[2026-05-11 11:08:33] [系统] 用户授权通过 duration=30分钟 authId=AUTH202605110012',
+          '[2026-05-11 11:08:34] [查询] 查询设备基础信息 region=NA node=us-west firmware=10.194.150.02 latest=10.194.150.02 online=true mqtt=connected',
+          '[2026-05-11 11:08:35] [系统] 当前固件已是最新，隐藏固件升级入口',
+          '[2026-05-11 11:10:21] [指令] 下发 P2P 状态刷新 command=p2p_status_refresh requestId=req_1715397021',
+          '[2026-05-11 11:10:22] [回调] P2P 状态刷新成功 requestId=req_1715397021 result=relay',
+          '[2026-05-11 11:16:03] [授权] 用户在 App 端撤销授权 authId=AUTH202605110012',
+          '[2026-05-11 11:16:04] [错误] 实时画面和设备控制已停止 reason=user_revoked'
+        ]
+      },
+      DBG202605100089: {
+        id: 'DBG202605100089',
+        device: 'IPC4G7782009',
+        model: 'IPC 4G 室外版',
+        operator: '李峥',
+        account: 'CS001',
+        status: '授权过期',
+        startedAt: '2026-05-10 18:33',
+        endedAt: '2026-05-10 19:03',
+        logs: [
+          '[2026-05-10 18:33:05] [授权] 李峥(CS001) 申请远程调试 device=IPC4G7782009 reason=排查 4G 网络频繁离线',
+          '[2026-05-10 18:33:31] [系统] 用户授权通过 duration=30分钟 authId=AUTH202605100089',
+          '[2026-05-10 18:33:33] [查询] 查询设备基础信息 region=APAC node=ap-southeast firmware=10.188.090.12 latest=10.188.096.08 online=true mqtt=connected',
+          '[2026-05-10 18:35:10] [指令] 下发 网络质量检测 command=network_quality_check requestId=req_1715337310',
+          '[2026-05-10 18:35:16] [回调] 网络质量检测成功 requestId=req_1715337310 latency=386ms packetLoss=8%',
+          '[2026-05-10 18:42:27] [指令] 下发 云转发状态刷新 command=relay_status_refresh requestId=req_1715337747',
+          '[2026-05-10 18:42:32] [错误] 云转发状态刷新失败 requestId=req_1715337747 code=NETWORK_UNSTABLE',
+          '[2026-05-10 18:51:03] [指令] 下发 拉取设备日志 command=pull_device_log requestId=req_1715338263',
+          '[2026-05-10 18:51:08] [错误] 拉取设备日志超时 requestId=req_1715338263 timeout=5000ms',
+          '[2026-05-10 19:03:31] [授权] 授权时间到期，系统自动断开调试连接 session=expired'
+        ]
+      }
+    };
+
+    function setFirmwareState(currentVersion, latestVersion, state = 'ready') {
+      const firmwareVersion = document.getElementById('firmwareVersion');
+      const latestFirmware = document.getElementById('latestFirmware');
+      const latestTag = document.getElementById('firmwareLatestTag');
+      const upgradeBtn = document.getElementById('firmwareUpgradeBtn');
+      const isLatest = currentVersion === latestVersion;
+      firmwareLatestVersion = latestVersion;
+      firmwareVersion.textContent = currentVersion;
+      latestTag.hidden = !isLatest || state === 'upgrading';
+      upgradeBtn.hidden = isLatest || state === 'upgrading';
+      upgradeBtn.dataset.latestVersion = latestVersion;
+      if (state === 'upgrading') {
+        latestFirmware.textContent = `${latestVersion} · 升级中`;
+        return;
+      }
+      latestFirmware.textContent = `${latestVersion} · ${isLatest ? '已是最新' : '可升级'}`;
+    }
+
+    function nowTime() {
+      return new Date().toLocaleTimeString('zh-CN', { hour12: false }).slice(0, 8);
+    }
+
+    function addLog(type, text, isError) {
+      const row = document.createElement('div');
+      row.className = 'log-row';
+      const typeClass = isError ? 'log-type err' : type === '授权' ? 'log-type auth' : 'log-type';
+      row.innerHTML = `<span class="log-time">${nowTime()}</span><span class="${typeClass}">${type}</span><span>${text}</span>`;
+      logList.prepend(row);
+    }
+
+    function renderRecordDetail(recordId) {
+      const record = debugRecordDetails[recordId];
+      if (!record) return;
+      activeRecordId = recordId;
+      recordDetailTitle.textContent = `调试记录详情 · ${record.id}`;
+      recordDetailSummary.innerHTML = `
+        <div class="kv"><label>设备</label><strong title="${record.device}">${record.device}</strong></div>
+        <div class="kv"><label>机型</label><strong title="${record.model}">${record.model}</strong></div>
+        <div class="kv"><label>操作人</label><strong>${record.operator}(${record.account})</strong></div>
+        <div class="kv"><label>授权状态</label><strong>${record.status}</strong></div>
+        <div class="kv"><label>开始时间</label><strong>${record.startedAt}</strong></div>
+        <div class="kv"><label>结束时间</label><strong>${record.endedAt}</strong></div>
+        <div class="kv"><label>日志范围</label><strong>仅本次会话</strong></div>
+        <div class="kv"><label>展示格式</label><strong>指令日志</strong></div>
+      `;
+      recordLogCount.textContent = `${record.logs.length} 条日志`;
+      recordLogText.textContent = record.logs.join('\n');
+      recordDetailModal.classList.add('show');
+    }
+
+    const initialRegionKey = document.getElementById('regionSelect').value;
+    const initialDeviceId = document.getElementById('deviceInput').value.trim();
+    const initialQuery = getQueryFirmware(initialRegionKey, initialDeviceId);
+    syncQueryContext(initialQuery, initialDeviceId);
+    setFirmwareState(initialQuery.current, initialQuery.latest);
+
+    function closeRecordDetail() {
+      recordDetailModal.classList.remove('show');
+    }
+
+    function setConnectionState(state) {
+      const onlineText = document.getElementById('onlineText');
+      const authText = document.getElementById('authText');
+      const mqttText = document.getElementById('mqttText');
+      if (state === 'connected') {
+        connected = true;
+        authorized = true;
+        onlineText.textContent = '在线';
+        authText.textContent = `已授权 · ${selectedDuration}`;
+        mqttText.textContent = 'MQTT 已连接';
+        document.getElementById('requestState').textContent = '用户已接受';
+        document.getElementById('durationState').textContent = selectedDuration;
+        document.getElementById('connectState').textContent = 'MQTT 已连接';
+      }
+      if (state === 'revoked') {
+        connected = false;
+        authorized = false;
+        onlineText.textContent = '在线';
+        authText.textContent = '用户已撤销授权';
+        mqttText.textContent = '已断开';
+        document.getElementById('connectState').textContent = '已断开';
+      }
+      if (state === 'disconnected') {
+        connected = false;
+        onlineText.textContent = '在线';
+        mqttText.textContent = '已断开';
+        document.getElementById('connectState').textContent = '已断开';
+      }
+    }
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-btn').forEach(item => item.classList.remove('active'));
+        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.view).classList.add('active');
+        document.getElementById('pageTitle').textContent = btn.textContent.replace(/[0-9]/g, '').trim();
+      });
+    });
+
+    document.getElementById('regionSelect').addEventListener('change', () => {
+      syncRegionBadges(getRegionMeta(document.getElementById('regionSelect').value));
+    });
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(item => item.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(item => item.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+      });
+    });
+
+    document.querySelectorAll('[data-command]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.classList.contains('disabled')) return;
+        const command = btn.dataset.command;
+        if (!authorized || !connected) {
+          addLog('错误', `无法执行「${command}」：未授权或 MQTT 未连接`, true);
+          return;
+        }
+        if (btn.dataset.danger === 'true') {
+          pendingCommand = command;
+          modalTitle.textContent = '高敏操作确认';
+          riskCheck.checked = false;
+          confirmModal.disabled = true;
+          const riskMap = {
+            '格式化 SD 卡': '格式化 SD 卡会清除卡内录像数据，可能导致用户无法继续查看历史录像。请确认用户已知晓风险或售后场景确需执行。',
+            '设备重启': '设备重启会导致短时间离线，实时画面、录像回放和设备控制会暂时中断。',
+            '远程升级固件': '远程升级固件会让设备进入升级流程，期间可能短暂离线或无法预览。请确认设备在线、电量/供电稳定，并确认用户同意升级到服务器最新固件版本。'
+          };
+          modalBody.childNodes[0].nodeValue = `确认执行「${command}」？该操作将通过 MQTT 下发，并记录客服操作日志。`;
+          riskText.textContent = riskMap[command] || '该操作可能影响用户设备状态或数据，请确认当前售后问题排查确需执行。';
+          modal.classList.add('show');
+          return;
+        }
+        addLog('指令', `已下发「${command}」 requestId=req_${Date.now()}`);
+        setTimeout(() => addLog('回调', `设备回调「${command}」执行成功，页面状态已刷新`), 420);
+      });
+    });
+
+    document.getElementById('cancelModal').addEventListener('click', () => {
+      modal.classList.remove('show');
+      pendingCommand = '';
+    });
+
+    riskCheck.addEventListener('change', () => {
+      confirmModal.disabled = !riskCheck.checked;
+    });
+
+    confirmModal.addEventListener('click', () => {
+      modal.classList.remove('show');
+      addLog('指令', `已确认并下发高敏操作「${pendingCommand}」`);
+      if (pendingCommand === '远程升级固件') {
+        setFirmwareState(document.getElementById('firmwareVersion').textContent, firmwareLatestVersion, 'upgrading');
+        addLog('系统', `设备已进入固件升级流程，目标版本 ${firmwareLatestVersion}，升级期间可能短暂离线`);
+        setTimeout(() => {
+          setFirmwareState(firmwareLatestVersion, firmwareLatestVersion);
+          addLog('回调', `设备固件升级成功，当前版本已更新为 ${firmwareLatestVersion}`);
+        }, 1100);
+      } else {
+        setTimeout(() => addLog('回调', `设备回调「${pendingCommand}」执行成功，高敏操作已留痕`), 520);
+      }
+      pendingCommand = '';
+    });
+
+    document.getElementById('searchBtn').addEventListener('click', () => {
+      const regionKey = document.getElementById('regionSelect').value;
+      const deviceId = document.getElementById('deviceInput').value.trim();
+      const queryResult = getQueryFirmware(regionKey, deviceId);
+      syncQueryContext(queryResult, deviceId);
+      setFirmwareState(queryResult.current, queryResult.latest);
+      addLog('系统', `按 ${queryResult.name}（${queryResult.node}）路由查询设备 ${deviceId || '--'}，endpoint=${queryResult.endpoint}`);
+      addLog('系统', `设备 ${deviceId || '--'} 查询成功，region=${queryResult.regionKey} node=${queryResult.node} current=${queryResult.current} latest=${queryResult.latest}`);
+    });
+
+    document.getElementById('authBtn').addEventListener('click', () => {
+      const regionKey = document.getElementById('regionSelect').value;
+      const regionMeta = getRegionMeta(regionKey);
+      const deviceId = document.getElementById('deviceInput').value.trim();
+      const reason = document.getElementById('reasonInput').value.trim();
+      if (!deviceId) {
+        addLog('错误', '申请授权失败：请输入设备 VUID', true);
+        return;
+      }
+      if (!reason) {
+        addLog('错误', '申请授权失败：请输入申请理由，用户 App 授权弹窗需展示该内容', true);
+        return;
+      }
+      authorized = false;
+      connected = false;
+      document.getElementById('flowDeviceId').textContent = `${regionMeta.name} · ${deviceId}`;
+      syncRegionBadges(regionMeta);
+      document.getElementById('appReasonText').textContent = reason;
+      document.getElementById('requestState').textContent = '已发送到 App';
+      document.getElementById('durationState').textContent = '等待用户选择';
+      document.getElementById('connectState').textContent = '等待 App 授权';
+      document.getElementById('authText').textContent = '授权中';
+      document.getElementById('mqttText').textContent = '待连接';
+      addLog('授权', `已向用户 App 发送授权弹窗，区域 ${regionMeta.name}（${regionMeta.node}），申请理由：${reason}`);
+      addLog('授权', '检测到该用户还有 1 个待处理售后申请，App 端将提示用户只能接受 1 个');
+      appAuthModal.classList.add('show');
+    });
+
+    document.querySelectorAll('.duration-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.duration-btn').forEach(item => item.classList.remove('active'));
+        btn.classList.add('active');
+        selectedDuration = btn.dataset.duration;
+      });
+    });
+
+    document.querySelectorAll('.lens-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const count = Number(btn.dataset.lens);
+        const stage = document.getElementById('videoStage');
+        stage.classList.remove('count-1', 'count-2', 'count-4');
+        stage.classList.add(`count-${count}`);
+        document.querySelectorAll('.camera-tile').forEach(tile => {
+          tile.classList.remove('zoomed');
+          tile.style.display = Number(tile.dataset.channel) <= count ? 'block' : 'none';
+        });
+        addLog('视频', `已根据设备镜头数量切换为 ${count} 个画面窗口`);
+      });
+    });
+
+    document.querySelectorAll('.camera-tile').forEach(tile => {
+      tile.addEventListener('click', () => {
+        const alreadyZoomed = tile.classList.contains('zoomed');
+        document.querySelectorAll('.camera-tile').forEach(item => item.classList.remove('zoomed'));
+        if (!alreadyZoomed) {
+          tile.classList.add('zoomed');
+          addLog('视频', `镜头 ${tile.dataset.channel} 已放大查看`);
+        } else {
+          addLog('视频', `镜头 ${tile.dataset.channel} 已退出放大查看`);
+        }
+      });
+    });
+
+    document.getElementById('loadRealVideoBtn').addEventListener('click', () => {
+      if (!authorized || !connected) {
+        addLog('错误', '接入真实摄像头画面失败：未授权或 MQTT 未连接', true);
+        return;
+      }
+      const demoStreams = [
+        'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+        'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+        'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+        'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
+      ];
+      document.querySelectorAll('.camera-tile').forEach((tile, index) => {
+        const video = tile.querySelector('.real-video');
+        video.src = demoStreams[index];
+        video.play().catch(() => {
+          addLog('错误', `镜头 ${tile.dataset.channel} 真实视频播放失败，请检查浏览器播放策略或流地址`, true);
+        });
+        tile.classList.add('has-real-video');
+      });
+      addLog('视频', '已接入真实摄像头画面示例流，实际项目中替换为设备实时流地址');
+    });
+
+    document.getElementById('approveAppAuth').addEventListener('click', () => {
+      appAuthModal.classList.remove('show');
+      setConnectionState('connected');
+      addLog('授权', `用户已在 App 端同意授权，授权时长 ${selectedDuration}`);
+      addLog('授权', '其他售后待处理申请已自动失效，避免并发调试冲突');
+    });
+
+    document.getElementById('rejectAppAuth').addEventListener('click', () => {
+      appAuthModal.classList.remove('show');
+      authorized = false;
+      connected = false;
+      document.getElementById('authText').textContent = '用户已拒绝授权';
+      document.getElementById('mqttText').textContent = '未连接';
+      document.getElementById('requestState').textContent = '用户已拒绝';
+      document.getElementById('durationState').textContent = '未授权';
+      document.getElementById('connectState').textContent = '不可连接';
+      addLog('授权', '用户已在 App 端拒绝授权，客服不可建立调试连接');
+    });
+
+    document.getElementById('revokeBtn').addEventListener('click', () => {
+      setConnectionState('revoked');
+      addLog('授权', '用户在 App 端撤销授权，实时画面、录像和控制能力已停止');
+    });
+
+    document.getElementById('disconnectBtn').addEventListener('click', () => {
+      setConnectionState('disconnected');
+      addLog('系统', '客服主动断开 MQTT 调试连接');
+    });
+
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      addLog('系统', '已刷新设备基础信息、网络状态和功能集');
+    });
+
+    document.querySelectorAll('.record-detail-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        renderRecordDetail(btn.dataset.recordId);
+      });
+    });
+
+    document.getElementById('closeRecordDetail').addEventListener('click', closeRecordDetail);
+
+    recordDetailModal.addEventListener('click', (event) => {
+      if (event.target === recordDetailModal) closeRecordDetail();
+    });
+
+    document.getElementById('copyRecordLogBtn').addEventListener('click', async () => {
+      const text = recordLogText.textContent;
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        recordLogCount.textContent = '已复制日志';
+      } catch (error) {
+        recordLogCount.textContent = '复制失败，请手动选择日志';
+      }
+    });
+
+    const volumeRange = document.getElementById('volumeRange');
+    const setVolumeBtn = document.getElementById('setVolumeBtn');
+    const resolutionSelect = document.getElementById('resolutionSelect');
+
+    volumeRange.addEventListener('input', () => {
+      setVolumeBtn.textContent = `音量 ${volumeRange.value}`;
+    });
+
+    setVolumeBtn.addEventListener('click', () => {
+      if (!authorized || !connected) {
+        addLog('错误', '设置设备音量失败：未授权或 MQTT 未连接', true);
+        return;
+      }
+      addLog('指令', `已下发「设置设备音量」 volume=${volumeRange.value}`);
+      setTimeout(() => addLog('回调', `设备回调音量设置成功：${volumeRange.value}`), 420);
+    });
+
+    document.getElementById('setResolutionBtn').addEventListener('click', () => {
+      if (!authorized || !connected) {
+        addLog('错误', '切换分辨率失败：未授权或 MQTT 未连接', true);
+        return;
+      }
+      const resolution = resolutionSelect.value;
+      addLog('指令', `已下发「切换分辨率」 resolution=${resolution}`);
+      setTimeout(() => {
+        document.getElementById('streamResolution').textContent = `主码流 · ${resolution}`;
+        document.querySelectorAll('.tile-resolution').forEach(item => {
+          item.textContent = resolution;
+        });
+        addLog('回调', `设备回调分辨率切换成功：${resolution}`);
+      }, 420);
+    });
+
+    const rightStack = document.querySelector('.right-stack');
+    const rightResizeHandle = document.getElementById('rightResizeHandle');
+    let resizingRightPanel = false;
+
+    rightResizeHandle.addEventListener('mousedown', (event) => {
+      resizingRightPanel = true;
+      rightStack.classList.add('resizing');
+      event.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (event) => {
+      if (!resizingRightPanel) return;
+      const rect = rightStack.getBoundingClientRect();
+      const rawPercent = ((event.clientY - rect.top) / rect.height) * 100;
+      const nextPercent = Math.max(35, Math.min(75, rawPercent));
+      rightStack.style.setProperty('--function-height', `${nextPercent}%`);
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (!resizingRightPanel) return;
+      resizingRightPanel = false;
+      rightStack.classList.remove('resizing');
+      addLog('系统', '已调整设备功能与指令日志模块显示面积');
+    });
+
+    document.getElementById('readMotorParams').addEventListener('click', () => {
+      if (!authorized || !connected) {
+        addLog('错误', '读取电机参数失败：未授权或 MQTT 未连接', true);
+        return;
+      }
+      addLog('指令', `已下发「读取电机默认参数」 requestId=req_${Date.now()}`);
+      setTimeout(() => {
+        motorParamsLoaded = true;
+        document.getElementById('motorStep').value = '12';
+        document.getElementById('motorCenterStep').value = '28';
+        document.getElementById('motorReadState').textContent = '已读取 · 12 / 28';
+        addLog('回调', '设备回调电机默认参数：步长 12，居中步长 28');
+      }, 520);
+    });
+
+    document.getElementById('saveMotorParams').addEventListener('click', () => {
+      if (!authorized || !connected) {
+        addLog('错误', '保存电机参数失败：未授权或 MQTT 未连接', true);
+        return;
+      }
+      if (!motorParamsLoaded) {
+        addLog('错误', '保存电机参数失败：请先读取设备当前参数', true);
+        return;
+      }
+      const step = Number(document.getElementById('motorStep').value);
+      const centerStep = Number(document.getElementById('motorCenterStep').value);
+      if (!Number.isInteger(step) || !Number.isInteger(centerStep) || step < 1 || step > 100 || centerStep < 1 || centerStep > 100) {
+        addLog('错误', '保存电机参数失败：步长和居中步长需为 1-100 的整数', true);
+        return;
+      }
+      addLog('指令', `已下发「保存电机默认参数」 step=${step}, centerStep=${centerStep}`);
+      setTimeout(() => {
+        document.getElementById('motorReadState').textContent = `已保存 · ${step} / ${centerStep}`;
+        addLog('回调', `设备回调电机默认参数保存成功：步长 ${step}，居中步长 ${centerStep}`);
+      }, 520);
+    });
+
+    document.getElementById('shotBtn').addEventListener('click', () => addLog('视频', '实时画面截图成功，文件保存 1 个月'));
+    document.getElementById('recordBtn').addEventListener('click', () => addLog('视频', '开始录制实时画面，下载行为将记录操作日志'));
+    document.getElementById('fullBtn').addEventListener('click', () => addLog('视频', '进入全屏预览模式'));
+    document.getElementById('clearLogBtn').addEventListener('click', () => { logList.innerHTML = ''; });
+    document.getElementById('errLogBtn').addEventListener('click', () => addLog('错误', '示例错误：设备响应超时，请稍后重试', true));
+    document.getElementById('allLogBtn').addEventListener('click', () => addLog('系统', '已切换为全部日志视图'));
+  </script>
+</body>
+</html>
