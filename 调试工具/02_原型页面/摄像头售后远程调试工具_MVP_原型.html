@@ -1404,13 +1404,12 @@
 
     .query-row {
       display: grid;
-      grid-template-columns: 126px minmax(0, 1fr) 112px;
+      grid-template-columns: minmax(0, 1fr) 112px;
       gap: 8px;
       margin-bottom: 10px;
     }
 
-    .input,
-    .select {
+    .input {
       width: 100%;
       height: 34px;
       border-radius: 6px;
@@ -1421,17 +1420,7 @@
       padding: 0 10px;
     }
 
-    .select {
-      appearance: none;
-      background-image: linear-gradient(45deg, transparent 50%, #8a98ad 50%), linear-gradient(135deg, #8a98ad 50%, transparent 50%);
-      background-position: calc(100% - 15px) 14px, calc(100% - 10px) 14px;
-      background-size: 5px 5px, 5px 5px;
-      background-repeat: no-repeat;
-      padding-right: 28px;
-    }
-
-    .input:focus,
-    .select:focus {
+    .input:focus {
       border-color: var(--brand);
       box-shadow: 0 0 0 3px rgba(95, 125, 247, .15);
     }
@@ -2554,16 +2543,10 @@
           <div class="panel-head">
             <div class="panel-title">设备查询</div>
             <button class="req-marker" type="button" data-req-marker="device-query" aria-label="查看设备查询需求说明">1</button>
-            <span class="sub">输入设备 ID / VUID 后查询设备状态与调试能力</span>
+            <span class="sub">输入设备 ID / VUID 后自动识别所属大区并查询设备状态与调试能力</span>
           </div>
           <div class="panel-body">
             <div class="query-row" data-anno="device-query-form">
-              <select class="select" id="regionSelect" aria-label="设备所属区域">
-                <option value="CN">中国区</option>
-                <option value="NA">北美区</option>
-                <option value="EU">欧洲区</option>
-                <option value="APAC">亚太区</option>
-              </select>
               <input class="input" id="vuidInput" value="VSTK059176NZFWL" aria-label="设备 VUID">
               <button class="btn primary" id="connectBtn">查询设备</button>
             </div>
@@ -2573,7 +2556,6 @@
                 <div class="kv is-hidden"><label>设备 ID</label><strong>3</strong></div>
                 <div class="kv"><label>VUID</label><strong id="infoVuid">VSTK059176NZFWL</strong></div>
                 <div class="kv"><label>所属区域</label><strong id="infoRegion">中国区</strong></div>
-                <div class="kv"><label>区域节点</label><strong id="infoRegionNode">cn-east</strong></div>
                 <div class="kv"><label>产品类型</label><strong id="infoProductType">婴儿看护</strong></div>
                 <div class="kv"><label>产品型号</label><strong id="infoModel">BabyCare-Cam</strong></div>
                 <div class="kv">
@@ -2901,7 +2883,6 @@
   <script>
     const logList = document.getElementById('logList');
     const vuidInput = document.getElementById('vuidInput');
-    const regionSelect = document.getElementById('regionSelect');
     const mqttDot = document.getElementById('mqttDot');
     const mqttStatus = document.getElementById('mqttStatus');
     const webrtcDot = document.getElementById('webrtcDot');
@@ -3315,36 +3296,28 @@
       CN: {
         code: 'CN',
         name: '中国区',
-        node: 'cn-east',
         endpoint: 'api-cn.after-sales.local',
-        logRegion: 'cn-east',
         mediaRoute: 'cn-media',
         controlRoute: 'cn-mqtt'
       },
       NA: {
         code: 'NA',
         name: '北美区',
-        node: 'us-west',
         endpoint: 'api-na.after-sales.local',
-        logRegion: 'us-west',
         mediaRoute: 'na-media',
         controlRoute: 'na-mqtt'
       },
       EU: {
         code: 'EU',
         name: '欧洲区',
-        node: 'eu-central',
         endpoint: 'api-eu.after-sales.local',
-        logRegion: 'eu-central',
         mediaRoute: 'eu-media',
         controlRoute: 'eu-mqtt'
       },
       APAC: {
         code: 'APAC',
         name: '亚太区',
-        node: 'ap-southeast',
         endpoint: 'api-apac.after-sales.local',
-        logRegion: 'ap-southeast',
         mediaRoute: 'apac-media',
         controlRoute: 'apac-mqtt'
       }
@@ -4340,15 +4313,15 @@
 
     function buildServerLogRows() {
       const vuid = vuidInput.value.trim() || 'VSTK059176NZFWL';
-      const region = controlAvailable ? activeRegion : regionForQuery();
+      const region = controlAvailable ? activeRegion : regionForQuery(vuid);
       const now = Date.now();
       const templates = [
         { level: 'INFO', module: 'auth-gateway', message: `GET /after-sale/device/query?region=${region.code} status=200 latency=42ms` },
         { level: 'INFO', module: 'device-shadow', message: `device=${vuid} ${regionLogSuffix(region)} shadow sync completed firmware=21.120.102.38` },
-        { level: 'INFO', module: 'p2p-relay', message: `p2p relay heartbeat accepted region=${region.logRegion} route=stable` },
+        { level: 'INFO', module: 'p2p-relay', message: `p2p relay heartbeat accepted region=${region.code} route=stable` },
         { level: 'DEBUG', module: 'media-router', message: `media token issued scope=preview ttl=300s route=${region.mediaRoute}` },
         { level: 'INFO', module: 'thingmodel-api', message: 'thing model property batch read success count=18' },
-        { level: 'WARN', module: 'alarm-center', message: `alarm notice queued uid=${vuid} payload=motion_warning region=${region.logRegion}` },
+        { level: 'WARN', module: 'alarm-center', message: `alarm notice queued uid=${vuid} payload=motion_warning region=${region.code}` },
         { level: 'INFO', module: 'rate-limiter', message: 'rate limiter checked customer_service_debug quota=normal' },
         { level: 'DEBUG', module: 'session-core', message: 'server pushed remote_debug_session keepalive interval=30s' },
         { level: 'INFO', module: 'storage-service', message: 'storage status read success sd_health=good free=38GB' },
@@ -4441,12 +4414,35 @@
       return deviceProfiles.bk.match(vuid) ? deviceProfiles.bk : deviceProfiles.baby;
     }
 
-    function regionForQuery() {
-      return regionProfiles[regionSelect.value] || regionProfiles.CN;
+    function resolveRegionForVuid(vuid) {
+      const normalized = String(vuid || '').trim().toUpperCase();
+      if (!normalized) return regionProfiles.CN;
+
+      const explicitMap = {
+        VSTK059176NZFWL: 'CN',
+        VQ6X9130031: 'NA',
+        BK20260519A01: 'CN',
+        BKUPGRADE001: 'CN'
+      };
+      const explicitKey = explicitMap[normalized];
+      if (explicitKey && regionProfiles[explicitKey]) {
+        return regionProfiles[explicitKey];
+      }
+
+      const regionKeys = ['CN', 'NA', 'EU', 'APAC'];
+      let hash = 0;
+      for (let index = 0; index < normalized.length; index += 1) {
+        hash = (hash * 31 + normalized.charCodeAt(index)) >>> 0;
+      }
+      return regionProfiles[regionKeys[hash % regionKeys.length]] || regionProfiles.CN;
+    }
+
+    function regionForQuery(vuid = vuidInput.value.trim()) {
+      return resolveRegionForVuid(vuid);
     }
 
     function regionLogSuffix(region = activeRegion) {
-      return `region=${region.code} node=${region.node}`;
+      return `region=${region.code}`;
     }
 
     function setStatusRows(profile) {
@@ -4673,7 +4669,7 @@
       }, 1100);
     }
 
-    function applyDeviceProfile(profile, vuid = vuidInput.value.trim(), region = regionForQuery()) {
+    function applyDeviceProfile(profile, vuid = vuidInput.value.trim(), region = regionForQuery(vuid)) {
       activeProfile = profile;
       activeRegion = region;
       thingModels = cloneModels(profile.id === 'bk' ? bkThingModels : babyThingModels);
@@ -4686,7 +4682,6 @@
       document.getElementById('modelPanelTitle').textContent = profile.modelTitle;
       document.getElementById('infoVuid').textContent = vuid || 'VSTK059176NZFWL';
       document.getElementById('infoRegion').textContent = region.name;
-      document.getElementById('infoRegionNode').textContent = region.node;
       document.getElementById('infoProductType').textContent = profile.productType;
       document.getElementById('infoModel').textContent = profile.model;
       setFirmwareState(firmware.current, firmware.latest);
@@ -5421,7 +5416,7 @@
     function clearDebugSession() {
       controlAvailable = false;
       activeProfile = deviceProfiles.baby;
-      activeRegion = regionForQuery();
+      activeRegion = regionForQuery(vuidInput.value.trim());
       thingModels = [];
       closeFirmwareUpgradeModal();
       stopPreview();
@@ -5438,8 +5433,7 @@
       setText('modelPanelTitle', '物模型联调');
       setText('deviceStatus', '未查询');
       setText('infoVuid', '-');
-      setText('infoRegion', activeRegion.name);
-      setText('infoRegionNode', activeRegion.node);
+      setText('infoRegion', '-');
       setText('infoProductType', '-');
       setText('infoModel', '-');
       setText('infoFirmware', '-');
@@ -5551,9 +5545,9 @@
         addLog('错误', '连接失败：请输入设备 VUID', true);
         return;
       }
-      const region = regionForQuery();
+      const region = regionForQuery(vuid);
       const nextProfile = profileForVuid(vuid);
-      addLog('系统', `正在通过 ${region.name} 网关查询设备 ${vuid}，endpoint=${region.endpoint}`);
+      addLog('系统', `正在通过 VUID 自动识别大区查询设备 ${vuid}，endpoint=${region.endpoint}`);
       applyDeviceProfile(nextProfile, vuid, region);
       const firmware = queryFirmwareByDeviceId(vuid, nextProfile);
       document.getElementById('videoVuid').textContent = vuid;
@@ -5884,11 +5878,11 @@
         page: '设备查询',
         target: "[data-anno='device-query-form']",
         type: 'field',
-        title: '区域化设备 VUID 查询',
-        summary: '选择设备所属大区后，输入设备 ID / VUID 查询设备状态、机型能力和可调试物模型。',
-        description: 'VUID 是售后远程定位设备的关键身份标识。查询时必须带上区域参数，由后端路由到中国区、北美区、欧洲区或亚太区对应节点；查询成功后系统识别设备所属机型，并根据机型切换婴儿看护或 BK 设备调试能力。',
-        rules: ['区域与 VUID 均必填', '示例值 VSTK059176NZFWL 为婴儿看护设备', '包含 BK 的输入会切换到 BK 机型数据', '查询成功后建立所选区域下的 MQTT 或 BK TCP 控制链路'],
-        api: ['GET /api/after-sales/devices/{vuid}/debug-profile?region={region}', 'GET /api/devices/{vuid}/online-status?region={region}'],
+        title: 'VUID 自动识别查询',
+        summary: '输入设备 ID / VUID 后自动识别设备所属大区，查询设备状态、机型能力和可调试物模型。',
+        description: 'VUID 是售后远程定位设备的关键身份标识。查询时不再要求客服手动选择区域，系统通过 VUID 自动识别所属大区并路由到对应区域服务；查询成功后系统识别设备所属机型，并根据机型切换婴儿看护或 BK 设备调试能力。',
+        rules: ['不需要手动选择区域', '示例值 VSTK059176NZFWL 为婴儿看护设备', '包含 BK 的输入会切换到 BK 机型数据', '查询成功后建立自动识别到的大区下的 MQTT 或 BK TCP 控制链路'],
+        api: ['GET /api/after-sales/devices/{vuid}/debug-profile', 'GET /api/devices/{vuid}/online-status'],
         testPoints: ['空值点击查询应记录错误日志', '查询成功后设备信息、网络信息、状态摘要、控制区和物模型区刷新']
       },
       {
@@ -5897,8 +5891,8 @@
         target: "[data-anno='device-basic-info']",
         type: 'field',
         title: '设备基本信息',
-        summary: '展示 VUID、所属区域、区域节点、产品类型、产品型号、固件版本、芯片、硬件版本、在线时长和存储卡健康状态。',
-        rules: ['只读展示，不允许客服在此修改设备身份信息', '所属区域与区域节点来自本次查询上下文', '不支持存储卡时 SD/TF 字段应隐藏或显示不支持', '已在信息区展示的只读属性不在物模型联调区重复作为主要入口'],
+        summary: '展示 VUID、所属区域、产品类型、产品型号、固件版本、芯片、硬件版本、在线时长和存储卡健康状态。',
+        rules: ['只读展示，不允许客服在此修改设备身份信息', '所属区域来自本次查询结果', '不支持存储卡时 SD/TF 字段应隐藏或显示不支持', '已在信息区展示的只读属性不在物模型联调区重复作为主要入口'],
         api: ['GET /api/devices/{vuid}/profile', 'GET /api/devices/{vuid}/storage-status'],
         testPoints: ['固件版本为空时应显示未知或异常提示', 'SD 卡异常时状态摘要和日志应能体现']
       },
