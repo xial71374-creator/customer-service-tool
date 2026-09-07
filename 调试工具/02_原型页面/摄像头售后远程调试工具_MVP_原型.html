@@ -2740,19 +2740,6 @@
     <main class="records-page app-view" id="recordsView" data-anno="debug-record-panel">
       <section class="account-admin-band">
         <div class="account-admin-band-head">
-          <strong>会话概览</strong>
-          <span>详情仅展示该客服当次会话的指令日志</span>
-        </div>
-        <div class="record-summary-grid">
-          <div class="record-summary-card"><span>今日调试</span><strong id="recordMetricTotal">0</strong></div>
-          <div class="record-summary-card"><span>指令总数</span><strong id="recordMetricCommand">0</strong></div>
-          <div class="record-summary-card"><span>失败/超时</span><strong id="recordMetricFailed">0</strong></div>
-          <div class="record-summary-card"><span>高危操作</span><strong id="recordMetricRisk">0</strong></div>
-        </div>
-      </section>
-
-      <section class="account-admin-band">
-        <div class="account-admin-band-head">
           <strong>调试会话</strong>
           <span>当前页面会话 + 历史样例</span>
         </div>
@@ -2763,8 +2750,6 @@
                 <th>记录 ID</th>
                 <th>设备</th>
                 <th>操作人</th>
-                <th>状态</th>
-                <th>调试摘要</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -3003,10 +2988,6 @@
     const debugRecordLogText = document.getElementById('debugRecordLogText');
     const copyDebugRecordLogBtn = document.getElementById('copyDebugRecordLogBtn');
     const closeDebugRecordDetailBtn = document.getElementById('closeDebugRecordDetailBtn');
-    const recordMetricTotal = document.getElementById('recordMetricTotal');
-    const recordMetricCommand = document.getElementById('recordMetricCommand');
-    const recordMetricFailed = document.getElementById('recordMetricFailed');
-    const recordMetricRisk = document.getElementById('recordMetricRisk');
     const firmwareUpgradeBtn = document.getElementById('firmwareUpgradeBtn');
     const firmwareUpgradeModal = document.getElementById('firmwareUpgradeModal');
     const firmwareUpgradeModalTitle = document.getElementById('firmwareUpgradeModalTitle');
@@ -4068,17 +4049,6 @@
       });
     }
 
-    function countRecordLogs(record, pattern) {
-      return record.logs.filter(line => pattern.test(line)).length;
-    }
-
-    function summarizeRecord(record) {
-      const commands = countRecordLogs(record, /\[指令\]|下发|设置|调用|读取/);
-      const failed = countRecordLogs(record, /\[错误\]|失败|超时|拒绝|不可用/);
-      const highRisk = countRecordLogs(record, /高危|固件升级|格式化|重启|恢复出厂/);
-      return { commands, failed, highRisk };
-    }
-
     function currentDebugRecord() {
       const user = currentUser || { account: '未登录', name: '未登录', role: 'cs' };
       const role = roleOf(user)?.name || '未登录';
@@ -4102,30 +4072,13 @@
       return [currentDebugRecord()].concat(debugRecordHistory);
     }
 
-    function renderDebugRecordSummary(records) {
-      const totals = records.reduce((acc, record) => {
-        const summary = summarizeRecord(record);
-        acc.commands += summary.commands;
-        acc.failed += summary.failed;
-        acc.highRisk += summary.highRisk;
-        return acc;
-      }, { commands: 0, failed: 0, highRisk: 0 });
-      recordMetricTotal.textContent = records.length;
-      recordMetricCommand.textContent = totals.commands;
-      recordMetricFailed.textContent = totals.failed;
-      recordMetricRisk.textContent = totals.highRisk;
-    }
-
     function renderDebugRecordTable(records) {
       debugRecordTableBody.innerHTML = records.map(record => {
-        const summary = summarizeRecord(record);
         return `
           <tr>
             <td>${record.id}</td>
             <td title="${escapeAttr(record.device)}">${record.device}</td>
             <td>${record.operator}</td>
-            <td>${record.status}</td>
-            <td>日志 ${record.logs.length} · 指令 ${summary.commands} · 失败 ${summary.failed} · 高危 ${summary.highRisk}</td>
             <td><button class="account-mini-btn" type="button" data-debug-record-id="${escapeAttr(record.id)}">详情</button></td>
           </tr>
         `;
@@ -4163,7 +4116,6 @@
 
     function renderDebugRecords() {
       const records = allDebugRecords();
-      renderDebugRecordSummary(records);
       renderDebugRecordTable(records);
     }
 
